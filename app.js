@@ -84,7 +84,7 @@ const CATEGORIES = [
 const PARTS = CATEGORIES.flatMap((c) => c.parts);
 
 // ========== STATE ==========
-let currentUser = null,
+let currentUser = null, // will store FULL EMAIL now
   userRole = null,
   schools = [],
   currentSchool = null,
@@ -110,8 +110,7 @@ const formatDate = (d) =>
       })
     : "Not set";
 
-const isDeadlinePassed = (d) =>
-  d ? new Date() > new Date(d + "T23:59:59") : false;
+const isDeadlinePassed = (d) => (d ? new Date() > new Date(d + "T23:59:59") : false);
 
 const daysUntil = (d) =>
   d ? Math.ceil((new Date(d + "T23:59:59") - new Date()) / 86400000) : null;
@@ -119,10 +118,7 @@ const daysUntil = (d) =>
 const isAdmin = () => userRole === "admin";
 
 const canEditSemester = (sem) =>
-  isAdmin() ||
-  !isDeadlinePassed(
-    currentSchool?.[sem === "start" ? "startDeadline" : "endDeadline"]
-  );
+  isAdmin() || !isDeadlinePassed(currentSchool?.[sem === "start" ? "startDeadline" : "endDeadline"]);
 
 function invKey(kitId, partId) {
   return `${kitId}|${partId}`;
@@ -136,15 +132,16 @@ function parseInvKey(key) {
 
 function restoreSelection(prevSchoolId, prevKitId) {
   if (prevSchoolId) currentSchool = schools.find((s) => s.id === prevSchoolId) || null;
-  if (currentSchool && prevKitId) currentKit = currentSchool.kits.find((k) => k.id === prevKitId) || null;
+  if (currentSchool && prevKitId)
+    currentKit = currentSchool.kits.find((k) => k.id === prevKitId) || null;
 }
 
 // ========== STORAGE (Supabase) ==========
 const loadData = async () => {
-  // Schools
-  const { data: schoolRows, error: sErr } = await db
+  // Schools (NOTE: includes user_id now)
+  let { data: schoolRows, error: sErr } = await db
     .from("schools")
-    .select("school_id,name,start_deadline,end_deadline,created_at")
+    .select("school_id,user_id,name,start_deadline,end_deadline,created_at")
     .order("created_at", { ascending: true });
 
   if (sErr) {
@@ -153,6 +150,33 @@ const loadData = async () => {
     schools = [];
     inventoryData = {};
     return;
+  }
+
+  // 🔴 TEMP (DEMO ONLY): frontend filtering for instructors
+  // Requires:
+  // - users.email = full email
+  // - schools.user_id points to users.user_id
+  if (userRole === "instructor") {
+    const { data: userRows, error: uErr } = await db
+      .from("users")
+      .select("user_id")
+      .eq("email", currentUser) // currentUser is FULL EMAIL now
+      .limit(1);
+
+    if (uErr) {
+      console.error(uErr);
+      alert("Load user failed: " + uErr.message);
+      schools = [];
+      inventoryData = {};
+      return;
+    }
+
+    const myUserId = userRows?.[0]?.user_id;
+    if (!myUserId) {
+      schoolRows = [];
+    } else {
+      schoolRows = (schoolRows || []).filter((s) => s.user_id === myUserId);
+    }
   }
 
   // Kits
@@ -254,7 +278,10 @@ function updateRoleBadge() {
   const b = document.getElementById("role-badge-schools");
   b.textContent = isAdmin() ? "Admin" : "Instructor";
   b.className = "role-badge " + userRole;
-  document.getElementById("user-display").textContent = currentUser;
+
+  // show username nicely, while currentUser stores full email
+  document.getElementById("user-display").textContent = (currentUser || "").split("@")[0];
+
   document.getElementById("add-school-btn").style.display = isAdmin() ? "block" : "none";
 }
 
@@ -383,10 +410,7 @@ async function saveSchoolEdit() {
   const start_deadline = document.getElementById("edit-school-start-deadline").value || null;
   const end_deadline = document.getElementById("edit-school-end-deadline").value || null;
 
-  const { error } = await db
-    .from("schools")
-    .update({ name, start_deadline, end_deadline })
-    .eq("school_id", id);
+  const { error } = await db.from("schools").update({ name, start_deadline, end_deadline }).eq("school_id", id);
 
   if (error) {
     console.error(error);
@@ -446,10 +470,7 @@ async function saveSchoolSettings() {
   const start_deadline = document.getElementById("settings-start-deadline").value || null;
   const end_deadline = document.getElementById("settings-end-deadline").value || null;
 
-  const { error } = await db
-    .from("schools")
-    .update({ name, start_deadline, end_deadline })
-    .eq("school_id", id);
+  const { error } = await db.from("schools").update({ name, start_deadline, end_deadline }).eq("school_id", id);
 
   if (error) {
     console.error(error);
@@ -537,9 +558,7 @@ function renderKits() {
     b.classList.toggle("active", b.dataset.filter === currentFilter)
   );
 
-  const filtered = kits.filter(
-    (k) => currentFilter === "all" || getKitStatus(currentSchool.id, k.id) === currentFilter
-  );
+  const filtered = kits.filter((k) => currentFilter === "all" || getKitStatus(currentSchool.id, k.id) === currentFilter);
 
   if (!kits.length) {
     grid.innerHTML = "";
@@ -625,8 +644,7 @@ function selectKit(id) {
   currentKit = currentSchool.kits.find((k) => k.id === id);
   const idx = currentSchool.kits.indexOf(currentKit) + 1;
   document.getElementById("nav-kit-name").textContent = currentKit.name || "Kit " + idx;
-  document.getElementById("inventory-title").textContent =
-    (currentKit.name || "Kit " + idx) + " Inventory";
+  document.getElementById("inventory-title").textContent = (currentKit.name || "Kit " + idx) + " Inventory";
 
   hasUnsavedChanges = false;
   pendingChanges = {};
@@ -767,8 +785,9 @@ function renderInventory() {
   updateSaveStatus();
   const canE = canEditSemester(currentSemester);
 
-  document.getElementById("categories").innerHTML = CATEGORIES.map(
-    (cat) => `
+  document.getElementById("categories").innerHTML = CATEGORIES
+    .map(
+      (cat) => `
       <div class="category">
         <div class="category-header" onclick="this.parentElement.classList.toggle('collapsed')">
           <span class="category-name">${cat.icon} ${cat.name}</span>
@@ -778,7 +797,8 @@ function renderInventory() {
           ${cat.parts.map((p) => renderPart(p, canE)).join("")}
         </div>
       </div>`
-  ).join("");
+    )
+    .join("");
 }
 
 function renderPart(part, canE) {
@@ -1023,7 +1043,9 @@ document.getElementById("login-form").addEventListener("submit", async function 
     return;
   }
 
-  currentUser = email.split("@")[0];
+  // ✅ store FULL email now (so it matches users.email)
+  currentUser = email;
+
   localStorage.setItem("js_user", currentUser);
   localStorage.setItem("js_role", userRole);
 
