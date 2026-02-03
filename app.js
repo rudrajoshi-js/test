@@ -514,7 +514,14 @@ async function deleteCurrentSchool() {
 
 // ========== KITS ==========
 function updateKitUI() {
-  document.getElementById("school-settings-btn").style.display = isAdmin() ? "block" : "none";
+  // Hide Add Kit button for instructors
+  document.getElementById("add-kit-btn").style.display =
+    isAdmin() ? "block" : "none";
+
+  // existing code
+  document.getElementById("school-settings-btn").style.display =
+    isAdmin() ? "block" : "none";
+
   const alert = document.getElementById("kit-deadline-alert");
   let html = "";
 
@@ -528,13 +535,17 @@ function updateKitUI() {
     if (ed !== null && ed > 0 && ed <= 3)
       html += `<div class="alert-box warning">⏰ End deadline in ${ed} day${ed > 1 ? "s" : ""}</div>`;
 
-    if (isDeadlinePassed(currentSchool.startDeadline) && isDeadlinePassed(currentSchool.endDeadline)) {
+    if (
+      isDeadlinePassed(currentSchool.startDeadline) &&
+      isDeadlinePassed(currentSchool.endDeadline)
+    ) {
       html = '<div class="alert-box danger">🔒 All deadlines passed - View only</div>';
     }
   }
 
   alert.innerHTML = html;
 }
+
 
 function renderKits() {
   const grid = document.getElementById("kit-grid"),
@@ -590,10 +601,15 @@ function renderKits() {
       return `<div class="kit-card" onclick="selectKit('${k.id}')">
         <div class="kit-header">
           <span class="kit-name">${k.name || "Kit " + idx}</span>
-          <button class="kit-menu" onclick="event.stopPropagation();openEditKit('${k.id}')">•••</button>
+          ${
+            isAdmin()
+              ? `<button class="kit-menu" onclick="event.stopPropagation();openEditKit('${k.id}')">•••</button>`
+              : ``
+          }
         </div>
         ${sh}
       </div>`;
+
     })
     .join("");
 }
