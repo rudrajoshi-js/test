@@ -20,7 +20,7 @@ const CATEGORIES = [
     icon: "⚡",
     parts: [
       { id: "large_hub", name: "Large Hub", expected: 1, image: "Parts_Images/largehub.webp" },
-      { id: "hub_battery", name: "Hub Battery", expected: 1, image: "Parts_Images/hubbattery.webp" },
+      { id: "hub_battery", name: "Hub Battery", expected: 1, image: "Parts_Images/Hubbattery.webp" },
       { id: "medium_motor", name: "Medium Motor", expected: 2, image: "Parts_Images/mediummotor.webp" },
       { id: "large_motor", name: "Large Motor", expected: 1, image: "Parts_Images/largemotor.webp" },
       { id: "color_sensor", name: "Color Sensor", expected: 1, image: "Parts_Images/cs.webp" },
