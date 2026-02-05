@@ -19,14 +19,14 @@ const CATEGORIES = [
     name: "Electronics",
     icon: "⚡",
     parts: [
-      { id: "large_hub", name: "Large Hub", expected: 1 },
-      { id: "hub_battery", name: "Hub Battery", expected: 1 },
-      { id: "medium_motor", name: "Medium Motor", expected: 2 },
-      { id: "large_motor", name: "Large Motor", expected: 1 },
-      { id: "color_sensor", name: "Color Sensor", expected: 1 },
-      { id: "distance_sensor", name: "Distance Sensor", expected: 1 },
-      { id: "force_sensor", name: "Force Sensor", expected: 1 },
-      { id: "micro_usb", name: "USB Cable", expected: 1 },
+      { id: "large_hub", name: "Large Hub", expected: 1, image: "Parts_Images/largehub.webp" },
+      { id: "hub_battery", name: "Hub Battery", expected: 1, image: "Parts_Images/hubbattery.webp" },
+      { id: "medium_motor", name: "Medium Motor", expected: 2, image: "Parts_Images/mediummotor.webp" },
+      { id: "large_motor", name: "Large Motor", expected: 1, image: "Parts_Images/largemotor.webp" },
+      { id: "color_sensor", name: "Color Sensor", expected: 1, image: "Parts_Images/cs.webp" },
+      { id: "distance_sensor", name: "Distance Sensor", expected: 1, image: "Parts_Images/distancesensor.webp" },
+      { id: "force_sensor", name: "Force Sensor", expected: 1, image: "Parts_Images/forcesensor.webp" },
+      { id: "micro_usb", name: "USB Cable", expected: 1, image: "Parts_Images/usbcable.webp" },
     ],
   },
   {
@@ -838,12 +838,19 @@ function renderPart(part, canE) {
 
   return `<div class="part-row" data-part="${part.id}">
     <div class="part-info">
-      <div class="part-icon">${cat?.icon || "📦"}</div>
+      <div class="part-icon">
+        ${
+          part.image
+            ? `<img src="${part.image}" alt="${part.name}" class="part-img">`
+            : (cat?.icon || "📦")
+        }
+      </div>
       <div class="part-details">
         <div class="part-name">${part.name}</div>
         <div class="part-expected">Expected: ${part.expected}</div>
       </div>
     </div>
+
     <div class="part-controls">
       <div class="counter">
         <button class="counter-btn" onclick="adjust('${part.id}',-1)" ${mDis}>−</button>
