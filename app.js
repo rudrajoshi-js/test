@@ -19,7 +19,7 @@ const CATEGORIES = [
     name: "Electronics",
     icon: "⚡",
     parts: [
-      { id: "large_hub", name: "Large Hub", expected: 1, image: "Parts_Images/largehub.webp" },
+      { id: "large_hub", name: "Large Hub", expected: 1, image: "Parts_Images/45601.png" },
       { id: "hub_battery", name: "Hub Battery", expected: 1, image: "Parts_Images/Hubbattery.webp" },
       { id: "medium_motor", name: "Medium Motor", expected: 2, image: "Parts_Images/mediummotor.webp" },
       { id: "large_motor", name: "Large Motor", expected: 1, image: "Parts_Images/largemotor.webp" },
