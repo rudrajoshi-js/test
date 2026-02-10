@@ -25,7 +25,6 @@
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; min-height:100dvh; overflow-x:hidden; }
 
-    /* Global background aesthetic for ALL screens */
     .bg-global{
       position: fixed;
       inset: 0;
@@ -69,8 +68,8 @@
     .app { position:relative; z-index:1; max-width:480px; margin:0 auto; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
 
     .header { padding:16px 20px 12px; }
-    .header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-    .header-nav { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); margin-bottom:16px; }
+    .header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; }
+    .header-nav { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); margin-bottom:16px; flex-wrap:wrap; }
     .header-nav a { color:var(--text-muted); text-decoration:none; }
     .header-nav a:hover { color:var(--text); }
     .header-nav .sep { color:var(--border); }
@@ -90,8 +89,8 @@
     /* Top Airtable button */
     .top-airtable {
       position: fixed;
-      top: 10px;
-      right: 10px;
+      top: calc(10px + env(safe-area-inset-top));
+      right: calc(10px + env(safe-area-inset-right));
       z-index: 2000;
       display: none;
       width: auto;
@@ -105,10 +104,20 @@
       cursor: pointer;
       font-family: inherit;
       backdrop-filter: blur(12px);
+      line-height: 1;
     }
     .top-airtable:hover {
       background: rgba(28,33,40,0.88);
       border-color: rgba(88,166,255,0.55);
+    }
+    @media (max-width: 420px) {
+      .top-airtable{
+        right: auto;
+        left: calc(10px + env(safe-area-inset-left));
+        padding: 9px 10px;
+        font-size: 12px;
+        border-radius: 11px;
+      }
     }
 
     #login-screen{
@@ -482,14 +491,14 @@
 
       <div id="school-empty" class="empty-state" style="display:none;">
         <p>No schools yet</p>
-    
+        <!-- admin-only visibility is handled by app.js updateRoleBadge(); keep hidden by default -->
         <button class="btn" id="add-school-empty-btn" style="width:auto;padding:12px 24px; display:none;" onclick="openModal('add-school-modal')">
           + Add School
         </button>
       </div>
 
       <div class="footer">
-     
+        <!-- admin-only visibility is handled by app.js updateRoleBadge(); keep hidden by default -->
         <button class="btn" id="add-school-btn" style="margin-bottom:12px; display:none;" onclick="openModal('add-school-modal')">+ Add School</button>
 
         <button class="logout-btn" onclick="logout()">
@@ -631,12 +640,14 @@
       if (btn) btn.textContent = isPw ? "🙈" : "👁️";
     }
 
-    // Airtable button visibility: hidden on login, shown after login
-    function setAirtableTopVisible(){
+  function setAirtableTopVisible(){
       const btn = document.getElementById("airtable-top-btn");
       const login = document.getElementById("login-screen");
+      const menu = document.getElementById("menu-screen");
       if (!btn || !login) return;
-      btn.style.display = login.classList.contains("active") ? "none" : "inline-flex";
+
+      const shouldHide = login.classList.contains("active") || (menu && menu.classList.contains("active"));
+      btn.style.display = shouldHide ? "none" : "inline-flex";
     }
 
     document.addEventListener("DOMContentLoaded", () => {
