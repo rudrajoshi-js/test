@@ -13,6 +13,9 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ========== CONFIG ==========
 const PASSWORDS = { admin: "admin2025", instructor: "instructor2025" };
 
+const AIRTABLE_INVITE_URL =
+  "https://airtable.com/invite/l?inviteId=inv3WPRC8h2ecloHc&inviteToken=2029a4b7d5e8fe0a9ea14242f7ca3f4e6b64f4377db588004ca8ef44af8eda5e&utm_medium=email&utm_source=product_team&utm_content=transactional-alerts";
+
 // ========== PARTS ==========
 const CATEGORIES = [
   {
@@ -201,10 +204,7 @@ const loadData = async () => {
     return;
   }
 
-  // FRONTEND VISIBILITY RULE:
-  // - admin: sees all schools
-  // - instructor: sees only schools where schools.user_id == currentUserId
-  if (userRole === "instructor") {
+ if (userRole === "instructor") {
     const myId = currentUserId;
     schoolRows = myId ? (schoolRows || []).filter((s) => s.user_id === myId) : [];
   }
@@ -268,7 +268,6 @@ const loadData = async () => {
   }
 };
 
-// keep this so existing calls don't break
 const saveData = () => {};
 
 // ========== AUTH (PASSWORD-ONLY UI) ==========
@@ -296,7 +295,11 @@ function showScreen(id) {
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 
-  if (id === "school-screen") {
+  if (id === "menu-screen") {
+    // optional: only works if you add <span id="menu-user-display"></span> in HTML
+    const el = document.getElementById("menu-user-display");
+    if (el) el.textContent = (currentUser || "").split("@")[0];
+  } else if (id === "school-screen") {
     updateRoleBadge();
     renderSchools();
   } else if (id === "kit-screen") {
@@ -307,6 +310,19 @@ function showScreen(id) {
     renderInventory();
     updateInventoryUI();
   }
+}
+
+// Optional helper if you want to call it explicitly
+function goToMenu() {
+  showScreen("menu-screen");
+}
+
+// Button 2 action
+function openAirtable() {
+  // New tab:
+  window.open(AIRTABLE_INVITE_URL, "_blank", "noopener,noreferrer");
+  // Same tab (if preferred):
+  // window.location.href = AIRTABLE_INVITE_URL;
 }
 
 function goBack() {
@@ -322,7 +338,25 @@ function updateRoleBadge() {
   b.className = "role-badge " + userRole;
 
   document.getElementById("user-display").textContent = (currentUser || "").split("@")[0];
-  document.getElementById("add-school-btn").style.display = isAdmin() ? "block" : "none";
+
+  // ✅ remove/hide Add School button for instructors (and kill click)
+  const addBtn = document.getElementById("add-school-btn");
+  if (addBtn) {
+    if (isAdmin()) {
+      addBtn.style.display = "block";
+      addBtn.disabled = false;
+      addBtn.style.pointerEvents = "auto";
+      addBtn.onclick = addBtn.onclick || null;
+    } else {
+      addBtn.style.display = "none";
+      addBtn.disabled = true;
+      addBtn.style.pointerEvents = "none";
+      addBtn.onclick = (e) => {
+        if (e) e.preventDefault();
+        return false;
+      };
+    }
+  }
 
   // Admin-only Manage Instructors button (created once)
   if (isAdmin()) {
@@ -334,10 +368,13 @@ function updateRoleBadge() {
       btn.textContent = "Manage Instructors";
       btn.onclick = manageInstructorsPrompt;
 
-      const addBtn = document.getElementById("add-school-btn");
       if (addBtn && addBtn.parentElement) addBtn.parentElement.appendChild(btn);
       else document.body.appendChild(btn);
     }
+    btn.style.display = "inline-block";
+  } else {
+    const btn = document.getElementById("manage-instructors-btn");
+    if (btn) btn.style.display = "none";
   }
 }
 
@@ -454,6 +491,8 @@ function selectSchool(id) {
 
 // ✅ add school (admin only via UI button; inserts user_id = null)
 async function addSchool() {
+  if (!isAdmin()) return; // hard stop (even if someone calls from console)
+
   const name = document.getElementById("new-school-name").value.trim();
   if (!name) return alert("Enter school name");
 
@@ -478,124 +517,6 @@ async function addSchool() {
 
   await loadData();
   renderSchools();
-}
-
-function openEditSchool(id) {
-  editingSchoolId = id;
-  const s = schools.find((x) => x.id === id);
-  document.getElementById("edit-school-name").value = s.name;
-  document.getElementById("edit-school-start-deadline").value = s.startDeadline || "";
-  document.getElementById("edit-school-end-deadline").value = s.endDeadline || "";
-  openModal("edit-school-modal");
-}
-
-async function saveSchoolEdit() {
-  const id = editingSchoolId;
-  const name = document.getElementById("edit-school-name").value.trim();
-  const start_deadline = document.getElementById("edit-school-start-deadline").value || null;
-  const end_deadline = document.getElementById("edit-school-end-deadline").value || null;
-
-  const { error } = await db.from("schools").update({ name, start_deadline, end_deadline }).eq("school_id", id);
-
-  if (error) {
-    console.error(error);
-    return alert("Save failed: " + error.message);
-  }
-
-  closeModal("edit-school-modal");
-
-  const prevSchoolId = currentSchool?.id || null;
-  const prevKitId = currentKit?.id || null;
-
-  await loadData();
-  restoreSelection(prevSchoolId, prevKitId);
-
-  renderSchools();
-  if (currentSchool) {
-    document.getElementById("nav-school-name").textContent = currentSchool.name;
-    document.getElementById("nav-school-name2").textContent = currentSchool.name;
-  }
-}
-
-async function deleteSchool() {
-  if (!confirm("Delete this school and all data?")) return;
-
-  const { error } = await db.from("schools").delete().eq("school_id", editingSchoolId);
-
-  if (error) {
-    console.error(error);
-    return alert("Delete failed: " + error.message);
-  }
-
-  closeModal("edit-school-modal");
-
-  const prevSchoolId = currentSchool?.id || null;
-  const prevKitId = currentKit?.id || null;
-
-  await loadData();
-  if (prevSchoolId === editingSchoolId) {
-    currentSchool = null;
-    currentKit = null;
-  } else {
-    restoreSelection(prevSchoolId, prevKitId);
-  }
-  renderSchools();
-}
-
-function openSchoolSettings() {
-  document.getElementById("settings-school-name").value = currentSchool.name;
-  document.getElementById("settings-start-deadline").value = currentSchool.startDeadline || "";
-  document.getElementById("settings-end-deadline").value = currentSchool.endDeadline || "";
-  openModal("school-settings-modal");
-}
-
-async function saveSchoolSettings() {
-  const id = currentSchool.id;
-  const name = document.getElementById("settings-school-name").value.trim() || currentSchool.name;
-  const start_deadline = document.getElementById("settings-start-deadline").value || null;
-  const end_deadline = document.getElementById("settings-end-deadline").value || null;
-
-  const { error } = await db.from("schools").update({ name, start_deadline, end_deadline }).eq("school_id", id);
-
-  if (error) {
-    console.error(error);
-    return alert("Save failed: " + error.message);
-  }
-
-  closeModal("school-settings-modal");
-
-  const prevSchoolId = currentSchool?.id || null;
-  const prevKitId = currentKit?.id || null;
-
-  await loadData();
-  restoreSelection(prevSchoolId, prevKitId);
-
-  document.getElementById("nav-school-name").textContent = currentSchool.name;
-  document.getElementById("nav-school-name2").textContent = currentSchool.name;
-
-  renderKits();
-  updateKitUI();
-  renderSchools();
-}
-
-async function deleteCurrentSchool() {
-  if (!confirm("Delete this school?")) return;
-
-  const id = currentSchool.id;
-  const { error } = await db.from("schools").delete().eq("school_id", id);
-
-  if (error) {
-    console.error(error);
-    return alert("Delete failed: " + error.message);
-  }
-
-  closeModal("school-settings-modal");
-
-  currentSchool = null;
-  currentKit = null;
-
-  await loadData();
-  showScreen("school-screen");
 }
 
 // ========== KITS ==========
@@ -678,11 +599,6 @@ function renderKits() {
       return `<div class="kit-card" onclick="selectKit('${k.id}')">
         <div class="kit-header">
           <span class="kit-name">${k.name || "Kit " + idx}</span>
-          ${
-            isAdmin()
-              ? `<button class="kit-menu" onclick="event.stopPropagation();openEditKit('${k.id}')">•••</button>`
-              : ``
-          }
         </div>
         ${sh}
       </div>`;
@@ -690,7 +606,6 @@ function renderKits() {
     .join("");
 }
 
-// sid unused; kept for compatibility
 function getKitStatus(_sid, kid) {
   let endFilled = 0,
     hasIssue = false;
@@ -744,88 +659,7 @@ function selectKit(id) {
   showScreen("inventory-screen");
 }
 
-async function addKit() {
-  if (!currentSchool) return alert("Select a school first");
-
-  const name = document.getElementById("new-kit-name").value.trim() || null;
-
-  const { error } = await db.from("kits").insert({
-    school_id: currentSchool.id,
-    name,
-  });
-
-  if (error) {
-    console.error(error);
-    return alert("Add kit failed: " + error.message);
-  }
-
-  closeModal("add-kit-modal");
-  document.getElementById("new-kit-name").value = "";
-
-  const prevSchoolId = currentSchool?.id || null;
-  await loadData();
-  restoreSelection(prevSchoolId, null);
-
-  renderKits();
-  updateKitUI();
-  renderSchools();
-}
-
-function openEditKit(id) {
-  editingKitId = id;
-  document.getElementById("edit-kit-name").value = currentSchool.kits.find((k) => k.id === id).name || "";
-  openModal("edit-kit-modal");
-}
-
-async function saveKitEdit() {
-  const name = document.getElementById("edit-kit-name").value.trim() || null;
-  const kitId = editingKitId;
-
-  const { error } = await db.from("kits").update({ name }).eq("kit_id", kitId);
-
-  if (error) {
-    console.error(error);
-    return alert("Save failed: " + error.message);
-  }
-
-  closeModal("edit-kit-modal");
-
-  const prevSchoolId = currentSchool?.id || null;
-  const prevKitId = currentKit?.id || null;
-
-  await loadData();
-  restoreSelection(prevSchoolId, prevKitId);
-
-  renderKits();
-  renderSchools();
-}
-
-async function deleteKit() {
-  if (!confirm("Delete this kit?")) return;
-
-  const kitId = editingKitId;
-  const { error } = await db.from("kits").delete().eq("kit_id", kitId);
-
-  if (error) {
-    console.error(error);
-    return alert("Delete failed: " + error.message);
-  }
-
-  closeModal("edit-kit-modal");
-
-  const prevSchoolId = currentSchool?.id || null;
-  const wasCurrentKit = currentKit?.id === kitId;
-
-  await loadData();
-  restoreSelection(prevSchoolId, null);
-
-  if (wasCurrentKit) currentKit = null;
-
-  renderKits();
-  renderSchools();
-}
-
-// ========== INVENTORY ==========
+// ========== INVENTORY (rest unchanged from your previous version) ==========
 function updateInventoryUI() {
   const canS = canEditSemester("start"),
     canE = canEditSemester("end"),
@@ -990,7 +824,7 @@ function updateSaveStatus() {
   }
 }
 
-// ✅ Save to part_counts (sets last_updated_by to currentUserId so audit trigger knows who changed)
+// ✅ Save to part_counts
 async function saveChanges() {
   if (!currentKit) return;
 
@@ -1115,7 +949,8 @@ document.querySelectorAll(".modal-overlay").forEach((m) =>
     }
 
     await loadData();
-    showScreen("school-screen");
+    // ✅ go to the new menu after login
+    showScreen("menu-screen");
   } else {
     showScreen("login-screen");
   }
@@ -1157,7 +992,8 @@ document.getElementById("login-form").addEventListener("submit", async function 
   }
 
   await loadData();
-  showScreen("school-screen");
+  // ✅ go to the new menu after login
+  showScreen("menu-screen");
 });
 
 window.addEventListener("beforeunload", (e) => {
