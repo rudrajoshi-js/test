@@ -53,7 +53,7 @@
       width:620px; height:620px;
       border-radius:50%;
       filter: blur(52px);
-      opacity:0.55;
+      opacity:0.35;
       mix-blend-mode: screen;
       animation: floaty 10s ease-in-out infinite;
     }
@@ -205,6 +205,8 @@
     .field-ic{ width:22px; text-align:center; opacity:0.9; }
     .field input{
       flex:1;
+      width: 100%;
+      min-width: 0;
       background:none;
       border:none;
       outline:none;
@@ -358,16 +360,70 @@
     .semester-tab.locked { opacity:0.6; }
     .semester-tab .lock-icon { margin-left:4px; }
 
-    .categories { flex:1; overflow-y:auto; padding:0 20px 120px; }
+    .categories {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 20px 160px; /* extra space for footer */
+    }
+
     .category { margin-bottom:8px; }
     .category-header { display:flex; justify-content:space-between; align-items:center; padding:12px 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.10); }
     .category-name { font-size:14px; font-weight:600; color:var(--text-muted); }
-    .category-chevron { color:var(--text-muted); transition:transform 0.2s; }
+    .category-chevron {
+      color: var(--text-muted);
+      transition: transform 0.2s ease;
+      font-size: 14px;
+    }
 
-    .part-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; gap:10px; border-bottom:1px solid rgba(255,255,255,0.10); }
+    .category.collapsed .category-chevron {
+      transform: rotate(-90deg);
+    }
 
-    .inventory-footer { position:fixed; bottom:0; left:0; right:0; background:rgba(0,0,0,0.25); border-top:1px solid rgba(255,255,255,0.10); padding:12px 20px; display:flex; gap:10px; backdrop-filter: blur(12px); }
-    .inventory-footer .btn { flex:1; padding:12px; }
+    .category.collapsed .category-items {
+      display: none;
+    }
+
+    .category-header {
+      cursor: pointer;
+    }
+    .category-header:hover {
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+    }
+
+
+
+    .part-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+
+
+    .inventory-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 14, 18, 0.85);
+      border-top: 1px solid rgba(255,255,255,0.12);
+      padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+      display: flex;
+      gap: 10px;
+      backdrop-filter: blur(16px);
+    }
+
+    .inventory-footer .btn {
+      flex: 1;
+      padding: 14px;
+      font-size: 15px;
+      border-radius: 12px;
+    }
+
     @media(min-width:480px) { .inventory-footer { left:50%; transform:translateX(-50%); max-width:480px; } }
 
     .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
@@ -380,8 +436,8 @@
     .empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
     .empty-state p { margin-bottom:16px; }
     .part-icon {
-      width: 44px;
-      height: 44px;
+      width: 48px;
+      height: 48px;
       border-radius: 10px;
       background: rgba(255,255,255,0.05);
       display: flex;
@@ -394,8 +450,92 @@
     .part-img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
     }
+    .part-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .part-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .part-name {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .part-expected {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .part-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .counter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.05);
+      padding: 4px 6px;
+      border-radius: 8px;
+    }
+
+    .counter-btn {
+      width: 26px;
+      height: 26px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .counter-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .counter-value {
+      width: 36px;
+      text-align: center;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 15px;
+    }
+
+    .part-badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .part-badge.ok {
+      background: rgba(63,185,80,0.15);
+      color: var(--success);
+    }
+
+    .part-badge.missing {
+      background: rgba(248,81,73,0.15);
+      color: var(--danger);
+    }
+
+    .part-badge.empty {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-muted);
+    }
+
 
 
   </style>

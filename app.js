@@ -36,51 +36,51 @@ const CATEGORIES = [
     name: "Beams",
     icon: "🔧",
     parts: [
-      { id: "beam_3m", name: "Beam 3M", expected: 6 },
-      { id: "beam_5m", name: "Beam 5M", expected: 4 },
-      { id: "beam_7m", name: "Beam 7M", expected: 6 },
-      { id: "beam_9m", name: "Beam 9M", expected: 4 },
-      { id: "beam_11m", name: "Beam 11M", expected: 4 },
-      { id: "beam_13m", name: "Beam 13M", expected: 4 },
-      { id: "beam_15m", name: "Beam 15M", expected: 6 },
+      { id: "beam_3m", name: "Beam 3M", expected: 6, image: "Parts_Images/Beam3M.png" },
+      { id: "beam_5m", name: "Beam 5M", expected: 4, image: "Parts_Images/Beam5M.png" },
+      { id: "beam_7m", name: "Beam 7M", expected: 6, image: "Parts_Images/Beam7M.png" },
+      { id: "beam_9m", name: "Beam 9M", expected: 4, image: "Parts_Images/Beam9M.png" },
+      { id: "beam_11m", name: "Beam 11M", expected: 4, image: "Parts_Images/Beam11M.png" },
+      { id: "beam_13m", name: "Beam 13M", expected: 4, image: "Parts_Images/Beam13M.png" },
+      { id: "beam_15m", name: "Beam 15M", expected: 6, image: "Parts_Images/Beam15M.png" },
     ],
   },
   {
     name: "Frames",
     icon: "⬜",
     parts: [
-      { id: "frame_5x7", name: "Frame 5×7", expected: 2 },
-      { id: "frame_7x11", name: "Frame 7×11", expected: 2 },
-      { id: "frame_11x15", name: "Frame 11×15", expected: 1 },
+      { id: "frame_5x7", name: "Frame 5×7", expected: 2, image: "Parts_Images/Frame5x7.png" },
+      { id: "frame_7x11", name: "Frame 7×11", expected: 2, image: "Parts_Images/Frame7x11.png" },
+      { id: "frame_11x15", name: "Frame 11×15", expected: 1, image: "Parts_Images/Frame11x15.png" },
     ],
   },
   {
     name: "Connectors",
     icon: "🔩",
     parts: [
-      { id: "peg_black", name: "Black Pegs", expected: 72 },
-      { id: "peg_blue", name: "Blue Pegs", expected: 20 },
-      { id: "bush", name: "Bush", expected: 10 },
+      { id: "peg_black", name: "Black Pegs", expected: 72, image: "Parts_Images/BlackPegs.png" },
+      { id: "peg_blue", name: "Blue Pegs", expected: 20, image: "Parts_Images/BluePegs.png" },
+      { id: "bush", name: "Bush", expected: 10, image: "Parts_Images/Bush.png"  },
     ],
   },
   {
     name: "Wheels & Gears",
     icon: "⚙️",
     parts: [
-      { id: "wheel_56", name: "Wheel Ø56", expected: 4 },
-      { id: "gear_12", name: "Gear Z12", expected: 2 },
-      { id: "gear_20", name: "Gear Z20", expected: 2 },
-      { id: "gear_36", name: "Gear Z36", expected: 2 },
+      { id: "wheel_56", name: "Wheel Ø56", expected: 4, image: "Parts_Images/Wheel056.png" },
+      { id: "gear_12", name: "Gear Z12", expected: 2, image: "Parts_Images/Gearz12.png" },
+      { id: "gear_20", name: "Gear Z20", expected: 2, image: "Parts_Images/Gearz20.png" },
+      { id: "gear_36", name: "Gear Z36", expected: 2, image: "Parts_Images/Gearz36.png" },
     ],
   },
   {
     name: "Miscellaneous",
     icon: "📦",
     parts: [
-      { id: "minifig_kate", name: "Kate Minifigure", expected: 1 },
-      { id: "minifig_kyle", name: "Kyle Minifigure", expected: 1 },
-      { id: "storage_box", name: "Storage Box", expected: 1 },
-      { id: "sorting_trays", name: "Sorting Trays", expected: 2 },
+      { id: "minifig_kate", name: "Kate Minifigure", expected: 1, image: "Parts_Images/Kate.png" },
+      { id: "minifig_kyle", name: "Kyle Minifigure", expected: 1, image: "Parts_Images/Kyle.png" },
+      { id: "storage_box", name: "Storage Box", expected: 1, image: "Parts_Images/StorageBox.png" },
+      { id: "sorting_trays", name: "Sorting Trays", expected: 2, image: "Parts_Images/Tray.png" },
     ],
   },
 ];
@@ -553,6 +553,7 @@ async function addKit() {
   }
 
   // Re-render
+  renderSchools();
   renderKits();
 }
 
@@ -751,17 +752,34 @@ function renderInventory() {
     .map(
       (cat) => `
       <div class="category">
-        <div class="category-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <div class="category-header" onclick="toggleCategory('${cat.name}')">
           <span class="category-name">${cat.icon} ${cat.name}</span>
-          <span class="category-chevron">▼</span>
+          <span class="category-chevron" id="chev-${cat.name}">▼</span>
         </div>
-        <div class="category-items">
+        <div class="category-items" id="cat-${cat.name}" style="display:none;">
           ${cat.parts.map((p) => renderPart(p, canE)).join("")}
         </div>
       </div>`
     )
     .join("");
 }
+
+function toggleCategory(name) {
+  const content = document.getElementById(`cat-${name}`);
+  const chev = document.getElementById(`chev-${name}`);
+
+  if (!content) return;
+
+  const isOpen = content.style.display === "block";
+
+  content.style.display = isOpen ? "none" : "block";
+
+  if (chev) {
+    chev.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
+  }
+}
+
+
 
 function renderPart(part, canE) {
   const key = invKey(currentKit.id, part.id),
@@ -795,8 +813,14 @@ function renderPart(part, canE) {
     <div class="part-controls">
       <div class="counter">
         <button class="counter-btn" onclick="adjust('${part.id}',-1)" ${mDis}>−</button>
-        <input type="text" class="counter-value" value="${num !== null ? num : ""}" data-part="${part.id}"
-          onchange="handleInput(this)" onfocus="this.select()" inputmode="numeric" ${!canE ? "disabled" : ""}>
+        <input type="number" min="0" max="${part.expected}"
+          class="counter-value"
+          value="${num !== null ? num : ""}"
+          data-part="${part.id}"
+          onchange="handleInput(this)"
+          onfocus="this.select()"
+          ${!canE ? "disabled" : ""}>
+
         <button class="counter-btn" onclick="adjust('${part.id}',1)" ${pDis}>+</button>
       </div>
       ${badge}
