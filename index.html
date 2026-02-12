@@ -69,7 +69,8 @@
 
     .app { position:relative; z-index:1; max-width:480px; margin:0 auto; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
 
-    .header { padding:16px 20px 12px; }
+    .header {padding: calc(16px + env(safe-area-inset-top)) 20px 12px; }
+
     .header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; }
     .header-nav { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); margin-bottom:16px; flex-wrap:wrap; }
     .header-nav a { color:var(--text-muted); text-decoration:none; }
@@ -91,7 +92,7 @@
     /* Top Airtable button */
     .top-airtable {
       position: fixed;
-      top: calc(10px + env(safe-area-inset-top));
+      top: calc(16px + env(safe-area-inset-top));
       right: calc(10px + env(safe-area-inset-right));
       z-index: 2000;
       display: none;
@@ -329,7 +330,15 @@
     .logout-btn { background:none; border:none; color:var(--text-muted); font-size:14px; cursor:pointer; display:flex; align-items:center; gap:8px; padding:12px 0; width:100%; }
     .logout-btn:hover { color:var(--text); }
 
-    .filters { display:flex; gap:8px; padding:0 20px; margin-bottom:16px; overflow-x:auto; }
+    .filters {
+      display:flex;
+      gap:8px;
+      padding:0 20px;
+      margin-bottom:16px;
+      overflow-x:auto;
+      padding-top: 6px;
+    }
+
     .filter-btn { padding:8px 14px; background:rgba(22,27,34,0.84); border:1px solid rgba(255,255,255,0.12); border-radius:20px; font-size:13px; color:var(--text-muted); cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px; font-family:inherit; backdrop-filter: blur(12px); }
     .filter-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
     .filter-btn .count { background:rgba(255,255,255,0.2); padding:2px 7px; border-radius:10px; font-size:11px; }
@@ -536,6 +545,20 @@
     .part-badge.empty {
       background: rgba(255,255,255,0.08);
       color: var(--text-muted);
+    }
+    body {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  
+    .add-kit-container,
+    .bottom-bar {
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+  
+    .header,
+    .top-bar,
+    .navbar {
+      padding-top: calc(10px + env(safe-area-inset-top));
     }
 
 
